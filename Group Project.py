@@ -11,6 +11,7 @@ movementTimer = Timer()
 duration = 0
 
 
+
 movementTimer.reset()
 print("Ready")
 
@@ -35,21 +36,41 @@ def robotMotion(command):
     elif("Backward" == command[0]):
         motorPair.move(command[1], unit = "seconds", speed = -1*motorPair.get_default_speed())
     elif("Spin" == command[0]):
-        motorPair.move(command[1], unit = "degrees", steering = 100)
-    elif("Arm" == command[0]):
+        spin(command[1])
+    elif("Arm Up" == command[0]):
         motorArm.run_for_seconds(seconds = command[1], speed = 10)
+    elif("Arm Down" == command[0]):
+        motorArm.run_for_seconds(seconds = command[1], speed = -10)
     else:
         print("ERROR: NOT VALID COMMAND")
     
 
 def spin(degrees):
-    motorPair.move(4.25 * degrees * (math.pi/360), 'in', steering=100)
+    hub.motion_sensor.reset_yaw_angle()
+    turnDirection = -1 if degrees > 0 else 1
+    endDegrees = min(abs(degrees), 179)
+    #print(endDegrees)
+    motorPair.start(steering=turnDirection * 100, speed = 40 * turnDirection)
+    while(True):
+        currentDegrees = hub.motion_sensor.get_yaw_angle()
+        #print(currentDegrees)
+        if(abs(currentDegrees) == endDegrees):
+            break
+    motorPair.stop()
 
-    spin(180)
 
+            
 
+print("Testing 90 degrees")
+wait_for_seconds(1)
+robotMotion(("Spin", 90))
 
-robotMotion(("Forward", 4))
-robotMotion(("Backward", 2))
+print("Testing 180 degrees")
+wait_for_seconds(1)
+
 robotMotion(("Spin", 180))
-robotMotion(("Arm", 1))
+
+print("Testing -90 degrees")
+wait_for_seconds(1)
+
+robotMotion(("Spin", -90))
