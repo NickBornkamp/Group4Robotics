@@ -15,42 +15,50 @@ duration = 0
 movementTimer.reset()
 print("Ready")
 
-def testArm():
-    motorArm.start(speed = 10)
-    while(movementTimer.now() < duration):
-        motorArm.set_degrees_counted(0)
-        degreesThen = motorArm.get_degrees_counted()
-        wait_for_seconds(0.2)
-        degreesNow = motorArm.get_degrees_counted()
-
-        degDiff = abs(degreesNow - degreesThen)
-        print(degDiff)
-        if(degDiff < 15):
-            motorArm.start(speed = motorArm.get_speed()*-1)
-    motorArm.stop()
-
-
+# This method takes the command tuple and makes the robot perform a simple instruction
+# Python Version 3.10 has a switch-case equivalent but SPIKE does not accept it.
 def robotMotion(command):
-    if("Forward" == command[0]):
+    print(command[0])
+    comm = command[0].upper()
+    if("FORWARD" == comm):
         motorPair.move(command[1], unit = "seconds")
-    elif("Backward" == command[0]):
+    elif("BACKWARD" == comm):
         motorPair.move(command[1], unit = "seconds", speed = -1*motorPair.get_default_speed())
-    elif("Spin" == command[0]):
-        spin(command[1])
-    elif("Arm Up" == command[0]):
+    elif("ROTATE" == comm):
+        rotate(command[1])
+    elif("ARM UP" == comm):
         motorArm.run_for_seconds(seconds = command[1], speed = 10)
-    elif("Arm Down" == command[0]):
+    elif("ARM DOWN" == comm):
         motorArm.run_for_seconds(seconds = command[1], speed = -10)
     else:
         print("ERROR: NOT VALID COMMAND")
-    
 
-def spin(degrees):
+
+def reverseCommand(stack):
+    revStack = []
+    for command in stack:
+        comm = command[0].upper()
+        if("FORWARD" == comm):
+            revStack.insert(0, ("BACKWARD", command[1]))
+        elif("BACKWARD" == comm):
+            revStack.insert(0, ("FORWARD", command[1]))
+        elif("ROTATE" == comm):
+            revStack.insert(0, ("ROTATE", -1*command[1]))
+        elif("ARM UP" == comm):
+            revStack.insert(0, ("ARM DOWN", command[1]))
+        elif("ARM DOWN" == comm):
+            revStack.insert(0, ("ARM UP", command[1]))
+        else:
+            print("ERROR: NOT VALID COMMAND")
+
+    return revStack
+
+def rotate(degrees):
     hub.motion_sensor.reset_yaw_angle()
     turnDirection = -1 if degrees > 0 else 1
     endDegrees = min(abs(degrees), 179)
     #print(endDegrees)
-    motorPair.start(steering=turnDirection * 100, speed = 40 * turnDirection)
+    motorPair.start(steering=turnDirection * 100, speed = 40)
     while(True):
         currentDegrees = hub.motion_sensor.get_yaw_angle()
         #print(currentDegrees)
@@ -61,16 +69,18 @@ def spin(degrees):
 
             
 
-print("Testing 90 degrees")
-wait_for_seconds(1)
-robotMotion(("Spin", 90))
+stackCommands = []
 
-print("Testing 180 degrees")
-wait_for_seconds(1)
+stackCommands.append(("Backward", 2))
+stackCommands.append(("Rotate", 90))
+stackCommands.append(("Forward", 1))
+stackCommands.append(("Arm Up", 2))
 
-robotMotion(("Spin", 180))
+print(stackCommands)
+revStack = reverseCommand(stackCommands)
+print(revStack)
 
-print("Testing -90 degrees")
-wait_for_seconds(1)
 
-robotMotion(("Spin", -90))
+#for command in stackCommands:
+ #   robotMotion(command)
+
