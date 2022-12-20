@@ -8,9 +8,8 @@ hub = PrimeHub()
 motorArm = Motor('E') # Left Motor
 motorPair = MotorPair('C', 'D')
 movementTimer = Timer()
-duration = 0
-
-
+color = ColorSensor('A')
+#duration = 0
 
 movementTimer.reset()
 print("Ready")
@@ -33,7 +32,7 @@ def robotMotion(command):
     else:
         print("ERROR: NOT VALID COMMAND")
 
-
+# This method takes the stack and reverses it
 def reverseCommand(stack):
     revStack = []
     for command in stack:
@@ -53,6 +52,7 @@ def reverseCommand(stack):
 
     return revStack
 
+# This method rotates the robot
 def rotate(degrees):
     hub.motion_sensor.reset_yaw_angle()
     turnDirection = -1 if degrees > 0 else 1
@@ -66,21 +66,60 @@ def rotate(degrees):
             break
     motorPair.stop()
 
-
-            
-
 stackCommands = []
 
-stackCommands.append(("Backward", 2))
-stackCommands.append(("Rotate", 90))
-stackCommands.append(("Forward", 1))
-stackCommands.append(("Arm Up", 2))
+#stackCommands.append(("Backward", 2))
+#stackCommands.append(("Rotate", 90))
+#stackCommands.append(("Forward", 1))
+#stackCommands.append(("Arm Up", 2))
 
-print(stackCommands)
-revStack = reverseCommand(stackCommands)
-print(revStack)
-
+#print(stackCommands)
+#revStack = reverseCommand(stackCommands)
+#print(revStack)
 
 #for command in stackCommands:
- #   robotMotion(command)
+#    robotMotion(command)
+    
+#for command in revStack:
+#    robotMotion(command)
 
+# This method uses the color sensor to move straight, detect an object, capture it, move it to another location, and move back to the line
+def acquire_box(duration):
+    motorPair.set_default_speed(25)
+
+    color1 = color.get_reflected_light()
+    print(color1)
+    while(movementTimer.now() < duration):
+        motorPair.start()
+        wait_for_seconds(0.5)
+
+        color2 = color.get_reflected_light()
+        print(color1, color2)
+        if color2 != color1:
+            motorPair.stop()
+            robotMotion(("Arm up", 2, 0))
+            robotMotion(("Forward", 1, 25))
+            robotMotion(("Arm down", 1.5, 0))
+
+            stackCommands = []
+            stackCommands.append(("Rotate", 90, 0))
+            stackCommands.append(("Forward", 3, 25))
+
+            print(stackCommands)
+            revStack = reverseCommand(stackCommands)
+            print(revStack)
+
+            for command in stackCommands:
+                robotMotion(command)
+
+            robotMotion(("Arm up", 2, 0))
+
+            for command in revStack:
+                robotMotion(command)
+
+            robotMotion(("Arm down", 1.5, 0))
+            
+            motorPair.start()
+            robotMotion(("Forward", 1, 25))
+
+acquire_box(30)
